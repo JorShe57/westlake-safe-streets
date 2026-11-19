@@ -69,6 +69,7 @@ export function App() {
   // Map UI states
   const [isPinDropMode, setIsPinDropMode] = useState(false);
   const [showHinLayer, setShowHinLayer] = useState(false);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const [pickedLocation, setPickedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [activeCorridorId, setActiveCorridorId] = useState<string>('all');
@@ -141,6 +142,7 @@ export function App() {
   const handleCorridorClick = (preset: (typeof CORRIDOR_PRESETS)[number]) => {
     setActiveCorridorId(preset.id);
     setSearchPin(null);
+    setMobilePanelOpen(false);
     setFlyToTarget({ lat: preset.lat, lng: preset.lng, zoom: preset.zoom, nonce: Date.now() });
   };
 
@@ -163,6 +165,7 @@ export function App() {
         const lat = candidate.location.y;
         const lng = candidate.location.x;
         setSearchPin({ lat, lng, label: candidate.address });
+        setMobilePanelOpen(false);
         setFlyToTarget({ lat, lng, zoom: 16, nonce: Date.now() });
       } else {
         showToast('Location not found in Westlake. Try an intersection like "Bradley & Detroit".');
@@ -356,15 +359,32 @@ export function App() {
       <main className="main-area">
         {activeTab === 'map' ? (
           <div className="map-workspace">
-            {/* Left Sidebar */}
-            <aside className="map-sidebar" aria-label="Safety concern controls and list">
+            {/* Left Sidebar (Desktop) / Slide-Up Sheet (Mobile) */}
+            <aside
+              className={`map-sidebar ${mobilePanelOpen ? 'is-mobile-open' : ''}`}
+              aria-label="Safety concern controls and list"
+            >
+              <div className="mobile-sheet-header">
+                <strong>Search, Filters &amp; Pins ({visibleReports.length})</strong>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label="Close filters and list"
+                  onClick={() => setMobilePanelOpen(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
               <div className="sidebar-cta-box">
                 <button
                   type="button"
                   className={`btn btn-block ${
                     isPinDropMode ? 'btn-cancel-drop' : 'btn-primary btn-lg'
                   }`}
-                  onClick={() => setIsPinDropMode((v) => !v)}
+                  onClick={() => {
+                    setIsPinDropMode((v) => !v);
+                    setMobilePanelOpen(false);
+                  }}
                 >
                   {isPinDropMode ? (
                     <>
@@ -504,6 +524,7 @@ export function App() {
                         }`}
                         onClick={() => {
                           setSelectedReportId(report.id);
+                          setMobilePanelOpen(false);
                           setFlyToTarget({
                             lat: report.lat,
                             lng: report.lng,
@@ -607,7 +628,38 @@ export function App() {
                 onMapPickLocation={handleMapPickLocation}
               />
 
-              {/* Compact Map Legend */}
+              {/* Mobile Floating Map Bar (Full-screen map UX on iPhone) */}
+              <div className="mobile-map-dock">
+                <button
+                  type="button"
+                  className="btn btn-secondary mobile-dock-btn"
+                  onClick={() => setMobilePanelOpen(true)}
+                >
+                  <Filter size={16} />
+                  <span>Search &amp; Pins ({visibleReports.length})</span>
+                </button>
+                <button
+                  type="button"
+                  className={`btn mobile-dock-btn ${
+                    isPinDropMode ? 'btn-cancel-drop' : 'btn-primary'
+                  }`}
+                  onClick={() => setIsPinDropMode((v) => !v)}
+                >
+                  {isPinDropMode ? (
+                    <>
+                      <X size={16} />
+                      <span>Cancel</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPinPlus size={16} />
+                      <span>Report Pin</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Compact Map Legend (Desktop) */}
               <div className="map-legend" aria-label="Map pin color legend">
                 <span className="legend-title">Road User</span>
                 <div className="legend-items">
