@@ -30,17 +30,33 @@ export function MobileNavDrawer({
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const sheetRef = useRef<HTMLElement | null>(null);
   const isClosingRef = useRef(false);
+  const hasOpenedRef = useRef(false);
+  const closeFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const finalizeClose = () => {
+    clearTimeout(closeFallbackTimerRef.current);
+    const dialog = dialogRef.current;
+    isClosingRef.current = false;
+    hasOpenedRef.current = false;
+    if (dialog?.open) {
+      dialog.close();
+    }
+    onClose();
+  };
 
   const slideClosed = () => {
     const scroller = scrollerRef.current;
     const dialog = dialogRef.current;
     if (!dialog || !dialog.open) return;
     isClosingRef.current = true;
-    if (scroller) {
+    if (scroller && scroller.scrollLeft > 2) {
       scroller.scrollTo({ left: 0, behavior: 'auto' });
+      clearTimeout(closeFallbackTimerRef.current);
+      closeFallbackTimerRef.current = setTimeout(() => {
+        if (isClosingRef.current) finalizeClose();
+      }, 450);
     } else {
-      dialog.close();
-      onClose();
+      finalizeClose();
     }
   };
 
@@ -53,12 +69,15 @@ export function MobileNavDrawer({
 
     if (open && !dialog.open) {
       isClosingRef.current = false;
+      hasOpenedRef.current = false;
       dialog.showModal();
       // Start at closed stop (left: 0 = spacer visible, sheet off-screen right)
       scroller.scrollTo({ left: 0, behavior: 'instant' as ScrollBehavior });
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          scroller.scrollTo({ left: sheet.offsetWidth, behavior: 'auto' });
+          if (dialog.open && !isClosingRef.current) {
+            scroller.scrollTo({ left: sheet.offsetWidth, behavior: 'auto' });
+          }
         });
       });
     } else if (!open && dialog.open && !isClosingRef.current) {
@@ -79,17 +98,20 @@ export function MobileNavDrawer({
       (entries) => {
         const entry = entries.at(-1);
         if (!entry || !dialog.open) return;
-        if (entry.intersectionRatio < visibleThreshold && isClosingRef.current) {
-          dialog.close();
-          isClosingRef.current = false;
-          onClose();
-        } else if (entry.intersectionRatio < visibleThreshold && scroller.scrollLeft <= 2) {
-          // User swiped the drawer all the way closed
-          dialog.close();
-          onClose();
+
+        if (entry.intersectionRatio >= 0.95) {
+          hasOpenedRef.current = true;
+          return;
+        }
+
+        if (
+          entry.intersectionRatio < visibleThreshold &&
+          (isClosingRef.current || hasOpenedRef.current)
+        ) {
+          finalizeClose();
         }
       },
-      { root: dialog, threshold: [visibleThreshold, 1] }
+      { root: dialog, threshold: [visibleThreshold, 0.95, 1] }
     );
     observer.observe(sheet);
 
