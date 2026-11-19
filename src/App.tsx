@@ -8,6 +8,7 @@ import {
   LocateFixed,
   Map as MapIcon,
   MapPinPlus,
+  Menu,
   QrCode,
   Route,
   Search,
@@ -37,6 +38,14 @@ import { CommunitySurveyPage } from './components/CommunitySurveyPage';
 import { QrCodeDialog } from './components/QrCodeDialog';
 import { EngineeringPortal } from './components/EngineeringPortal';
 import { ActionPlanTracker } from './components/ActionPlanTracker';
+import { AppTab, MobileNavDrawer } from './components/MobileNavDrawer';
+
+const TAB_TITLES: Record<AppTab, string> = {
+  map: 'Public Safety Map',
+  survey: 'Community Survey',
+  engineering: 'Engineering & GIS',
+  tracker: 'Action Plan Tracker',
+};
 
 const STORAGE_KEYS = {
   reports: 'westlake_ss4a_reports_v2',
@@ -55,7 +64,8 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 }
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'map' | 'survey' | 'engineering' | 'tracker'>('map');
+  const [activeTab, setActiveTab] = useState<AppTab>('map');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [reports, setReports] = useState<SafetyReport[]>(() =>
     loadFromStorage(STORAGE_KEYS.reports, SEEDED_REPORTS)
   );
@@ -291,7 +301,7 @@ export function App() {
           <div className="brand-mark" aria-hidden="true">
             <ShieldCheck size={22} />
           </div>
-          <div>
+          <div className="brand-desktop-text">
             <div className="brand-title-row">
               <span className="brand-title">Westlake Safe Streets</span>
               <span className="demo-badge">SS4A Prototype</span>
@@ -299,6 +309,10 @@ export function App() {
             <p className="brand-subtitle">
               City of Westlake, Ohio · Department of Engineering Public Input Hub
             </p>
+          </div>
+          <div className="brand-mobile-text">
+            <span className="mobile-page-title">{TAB_TITLES[activeTab]}</span>
+            <span className="mobile-page-sub">Westlake Safe Streets · SS4A</span>
           </div>
         </div>
 
@@ -345,12 +359,22 @@ export function App() {
         <div className="nav-actions">
           <button
             type="button"
-            className="btn btn-nav-outline"
+            className="btn btn-nav-outline desktop-qr-btn"
             onClick={() => setQrOpen(true)}
             title="Show printable QR code for public meetings"
           >
             <QrCode size={15} />
-            <span className="hide-sm">QR Flyer</span>
+            <span>QR Flyer</span>
+          </button>
+          <button
+            type="button"
+            className="mobile-menu-btn"
+            aria-label="Open navigation menu"
+            aria-expanded={mobileNavOpen}
+            aria-controls="mobile-nav-drawer"
+            onClick={() => setMobileNavOpen(true)}
+          >
+            <Menu size={22} />
           </button>
         </div>
       </header>
@@ -717,6 +741,14 @@ export function App() {
       />
 
       <QrCodeDialog open={qrOpen} onClose={() => setQrOpen(false)} />
+
+      <MobileNavDrawer
+        open={mobileNavOpen}
+        activeTab={activeTab}
+        onClose={() => setMobileNavOpen(false)}
+        onSelectTab={setActiveTab}
+        onOpenQr={() => setQrOpen(true)}
+      />
 
       {/* Toast Notification */}
       {toast && (
