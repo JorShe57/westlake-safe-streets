@@ -125,90 +125,39 @@ body,
   display: none;
 }
 
-/* Right-Side Scroll-Snap Navigation Drawer (Modern Web Guidance: navigation-drawer) */
+/* Right-Anchored Native <dialog> Navigation Drawer (iOS Safari Rock-Solid) */
 .nav-drawer {
-  --drawer-width: min(20em, 80dvw, 100dvw - 24px);
-  --drawer-backdrop: 0;
-  inset: 0;
-  width: auto;
-  height: auto;
-  max-width: none;
-  max-height: none;
-  margin: 0;
+  width: min(320px, 82vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0 0 0 auto;
   padding: 0;
-  background: transparent;
   border: 0;
-  overflow: visible;
+  background: #ffffff;
+  color: var(--slate-900);
+  box-shadow: -8px 0 32px rgb(9 27 44 / 0.28);
+  overflow: hidden;
+}
+
+.nav-drawer[open] {
+  display: flex;
+  flex-direction: column;
+  animation: drawer-slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes drawer-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .nav-drawer::backdrop {
-  background: #091b2c;
-  opacity: calc(var(--drawer-backdrop) * 0.58);
-}
-
-.nav-drawer-scroller {
-  position: relative;
-  display: grid;
-  /* Spacer on the left (closed stop = scrollLeft 0), sheet on the right (open stop) */
-  grid-template-columns: 100% var(--drawer-width);
-  overflow-x: scroll;
-  overscroll-behavior: none;
-  scrollbar-width: none;
-  scroll-snap-type: x mandatory;
-}
-
-.nav-drawer-scroller::-webkit-scrollbar {
-  display: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .nav-drawer-scroller {
-    scroll-behavior: smooth;
-  }
-}
-
-.nav-drawer-scroller::before {
-  content: '';
-  scroll-snap-align: start;
-}
-
-.nav-drawer-sheet {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  height: 100svh;
-  background: #ffffff;
-  color: var(--slate-900);
-  overflow-y: auto;
-  scroll-snap-align: end;
-  scrollbar-width: none;
-  box-shadow: -8px 0 32px rgb(9 27 44 / 0.28);
-}
-
-@supports (animation-timeline: scroll()) {
-  .nav-drawer {
-    timeline-scope: --drawer-fade;
-    animation: fade-drawer-backdrop linear both;
-    animation-timeline: --drawer-fade;
-  }
-
-  .nav-drawer-scroller {
-    scroll-timeline: --drawer-fade x;
-  }
-
-  @property --drawer-backdrop {
-    syntax: '<number>';
-    inherits: true;
-    initial-value: 0;
-  }
-
-  @keyframes fade-drawer-backdrop {
-    0% {
-      --drawer-backdrop: 0;
-    }
-    100% {
-      --drawer-backdrop: 1;
-    }
-  }
+  background: rgb(9 27 44 / 0.56);
+  backdrop-filter: blur(2px);
 }
 
 .nav-drawer-header {
@@ -257,6 +206,9 @@ body,
 }
 
 .nav-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 1rem 0.85rem calc(1.5rem + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
